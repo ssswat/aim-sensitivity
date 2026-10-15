@@ -1,6 +1,6 @@
 // First-Person Aim Sensitivity (Dusklight native mod)
 //
-// Scales how fast the camera/aim moves while Link aims in first person with the Bow, Boomerang,
+// Scales how fast the camera/aim moves while Link aims in first person with the Bow, Slingshot,
 // Hookshot or Double Clawshots. Nothing else is touched.
 //
 // How it works (and why it plays nice with other mods):
@@ -82,7 +82,7 @@ void set_percent(int64_t value) {
 
 // Only the first-person aiming items the mod is meant for.
 bool is_supported_item(u16 item) {
-    return item == dItemNo_BOW_e || item == dItemNo_BOOMERANG_e || item == dItemNo_HOOKSHOT_e ||
+    return item == dItemNo_BOW_e || item == dItemNo_PACHINKO_e || item == dItemNo_HOOKSHOT_e ||
            item == dItemNo_W_HOOKSHOT_e;
 }
 
@@ -180,7 +180,7 @@ void on_config_changed(ModContext*, ConfigVarHandle, const ConfigVarValue* value
 ModResult build_panel(ModContext*, UiElementHandle panel, void*, ModError*) {
     svc_ui->pane_add_section(mod_ctx, panel, "First-person aiming");
     svc_ui->pane_add_text(mod_ctx, panel,
-        "Speed of the aim in first person with the Bow, Boomerang, Hookshot and Double "
+        "Speed of the aim in first person with the Bow, Slingshot, Hookshot and Double "
         "Clawshots. 100% is the vanilla feel.",
         nullptr);
 
@@ -189,7 +189,7 @@ ModResult build_panel(ModContext*, UiElementHandle panel, void*, ModError*) {
     control.label = "Aim sensitivity";
     control.help_rml =
         "Lower = slower and more precise, higher = faster. Applies to stick, mouse, gyro and "
-        "touch aiming. Other items (slingshot, ball and chain, etc.) are not affected.";
+        "touch aiming. Other items (boomerang, ball and chain, etc.) are not affected.";
     control.binding = UI_BINDING_CONFIG_VAR;
     control.config_var = g_cvarSensitivity;
     control.min = kMinPercent;
