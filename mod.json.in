@@ -3,6 +3,6 @@
   "name": "First-Person Aim Sensitivity",
   "version": "@PROJECT_VERSION@",
   "author": "Alan",
-  "description": "Adds a separate aim sensitivity slider for each first-person aiming item: Bow, Slingshot, Clawshot and Double Clawshots. Nothing else is changed; at 100% the game behaves exactly like vanilla.",
+  "description": "Adds aim sensitivity sliders for first-person aiming: Bow, Slingshot, and one shared slider for the Clawshot and Double Clawshots. Nothing else is changed; at 100% the game behaves exactly like vanilla.",
   "icon": "res/icon.png"
 }

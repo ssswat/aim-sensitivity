@@ -1,11 +1,10 @@
 # First-Person Aim Sensitivity (mod para o Dusklight)
 
-Adiciona um controle de **sensibilidade da mira em primeira pessoa**, **separado para cada item**:
+Adiciona controles de **sensibilidade da mira em primeira pessoa**:
 
 - Arco
 - Estilingue
-- Gancho (Clawshot)
-- Gancho duplo (Double Clawshots)
+- Gancho (Clawshot) e Gancho duplo (Double Clawshots), que **compartilham o mesmo controle**
 
 Nada mais é alterado (bumerangue, bola e corrente etc. continuam normais). Funciona com analógico,
 mouse, giroscópio e toque, porque o ajuste é feito no ponto onde o jogo junta todas essas entradas.
@@ -14,7 +13,7 @@ mouse, giroscópio e toque, porque o ajuste é feito no ponto onde o jogo junta 
 
 1. Coloque o arquivo `aim_sensitivity.dusk` na pasta de mods (veja abaixo) ou arraste-o para a janela do Dusklight.
 2. Abra o menu **Mods**, ative **First-Person Aim Sensitivity**.
-3. No painel do mod, ajuste a sensibilidade de cada item (**Bow**, **Slingshot**, **Clawshot** e **Double Clawshots**), de 10% a 300%, de 5 em 5. **100% = jogo original.**
+3. No painel do mod, ajuste **Bow**, **Slingshot** e **Clawshot / Double Clawshots**, de 10% a 300%, de 5 em 5. **100% = jogo original.**
 
 A configuração fica salva no `config.json` do Dusklight e pode ser mudada com o jogo aberto.
 
@@ -63,5 +62,5 @@ Durante testes: recompile, copie o `.dusk` e clique em **Reload** no gerenciador
 ## Ajustes no código (`src/mod.cpp`)
 
 - `kMinPercent` / `kMaxPercent`: limites do controle.
-- `g_items`: a lista de itens suportados. Cada linha tem o item, o nome da configuração e o texto mostrado no painel (por padrão Arco, Estilingue, Gancho e Gancho duplo). Para incluir outro item, basta adicionar uma linha.
+- `g_items`: a lista de itens suportados. Cada linha tem o item (e, opcionalmente, um segundo item que divide o mesmo controle), o nome da configuração e o texto mostrado no painel. Para incluir outro item, basta adicionar uma linha.
 - Os textos da interface estão em inglês de propósito, para combinar com o resto do menu do Dusklight.
