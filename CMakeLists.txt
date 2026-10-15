@@ -21,6 +21,12 @@ add_subdirectory("${DUSKLIGHT_DIR}/sdk" dusklight-sdk EXCLUDE_FROM_ALL)
 
 configure_file(mod.json.in "${CMAKE_CURRENT_BINARY_DIR}/mod.json" @ONLY NEWLINE_STYLE LF)
 
+# MSVC reports __cplusplus as 199711 unless told otherwise, which makes the game headers
+# (dolphin/types.h) define `nullptr` as a macro and break the standard library. Report the real value.
+if (MSVC)
+    add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/Zc:__cplusplus>")
+endif ()
+
 add_mod(aim_sensitivity
         FEATURES game              # needed to hook game code
         SOURCES src/mod.cpp

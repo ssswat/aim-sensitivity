@@ -11,11 +11,29 @@
 //     other mods did in between) moved them this frame and rescales that delta.
 //   * At 100% (the default) the hooks return immediately: the game behaves exactly like vanilla.
 
-#include "global.h"
+// INCLUDE ORDER MATTERS: standard library and mod SDK headers first, game headers last.
+// Game headers (dolphin/types.h) define `nullptr` as a macro when the compiler reports an old
+// __cplusplus value (MSVC does by default). Any standard header included AFTER that point breaks
+// on Windows, so every standard header we (or the game headers) might need is pulled in up front.
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <functional>
+#include <limits>
+#include <memory>
+#include <new>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
-#include "d/actor/d_a_alink.h"
-#include "d/d_com_inf_game.h"
-#include "d/d_item_data.h"
 #include "mods/service.hpp"
 #include "mods/svc/config.h"
 #include "mods/svc/hook.h"
@@ -23,9 +41,10 @@
 #include "mods/svc/log.h"
 #include "mods/svc/ui.h"
 
-#include <algorithm>
-#include <cmath>
-#include <cstdint>
+// Game headers
+#include "d/actor/d_a_alink.h"
+#include "d/d_com_inf_game.h"
+#include "d/d_item_data.h"
 
 DEFINE_MOD();
 IMPORT_SERVICE(LogService, svc_log);
