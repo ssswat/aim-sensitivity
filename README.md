@@ -1,10 +1,11 @@
 # First-Person Aim Sensitivity (mod para o Dusklight)
 
-Adiciona um controle de **sensibilidade da mira em primeira pessoa** para:
+Adiciona um controle de **sensibilidade da mira em primeira pessoa**, **separado para cada item**:
 
 - Arco
 - Estilingue
-- Gancho (Hookshot) e Gancho duplo (Double Clawshots)
+- Gancho (Clawshot)
+- Gancho duplo (Double Clawshots)
 
 Nada mais é alterado (bumerangue, bola e corrente etc. continuam normais). Funciona com analógico,
 mouse, giroscópio e toque, porque o ajuste é feito no ponto onde o jogo junta todas essas entradas.
@@ -13,7 +14,7 @@ mouse, giroscópio e toque, porque o ajuste é feito no ponto onde o jogo junta 
 
 1. Coloque o arquivo `aim_sensitivity.dusk` na pasta de mods (veja abaixo) ou arraste-o para a janela do Dusklight.
 2. Abra o menu **Mods**, ative **First-Person Aim Sensitivity**.
-3. No painel do mod, ajuste **Aim sensitivity** (10% a 300%, de 5 em 5). **100% = jogo original.**
+3. No painel do mod, ajuste a sensibilidade de cada item (**Bow**, **Slingshot**, **Clawshot** e **Double Clawshots**), de 10% a 300%, de 5 em 5. **100% = jogo original.**
 
 A configuração fica salva no `config.json` do Dusklight e pode ser mudada com o jogo aberto.
 
@@ -22,7 +23,7 @@ A configuração fica salva no `config.json` do Dusklight e pode ser mudada com 
 - Usa só *hooks* `pre` e `post` na função `daAlink_c::setBodyAngleToCamera` (nunca "replace"), então outros mods podem mexer na mesma função.
 - Roda por último na cadeia de hooks (prioridade baixa), então escala também o que outros mods tiverem feito na mira naquele frame.
 - Em 100% (padrão) os hooks saem na hora: comportamento idêntico ao original.
-- Só age com Arco, Estilingue ou Gancho **e** com a câmera em primeira pessoa.
+- Só age com Arco, Estilingue, Gancho ou Gancho duplo **e** com a câmera em primeira pessoa.
 - Mantém os mesmos limites de inclinação do jogo (a mira nunca passa do que o original permite, mesmo a 300%).
 - Se o hook não puder ser instalado (versão do Dusklight diferente), o mod se desativa sozinho e mostra o erro, sem afetar o jogo.
 - Pode ser ativado, desativado e recarregado em tempo real; nada fica preso no jogo depois de desativar.
@@ -62,5 +63,5 @@ Durante testes: recompile, copie o `.dusk` e clique em **Reload** no gerenciador
 ## Ajustes no código (`src/mod.cpp`)
 
 - `kMinPercent` / `kMaxPercent`: limites do controle.
-- `is_supported_item`: quais itens contam (por padrão Arco, Estilingue, Gancho e Gancho duplo).
+- `g_items`: a lista de itens suportados. Cada linha tem o item, o nome da configuração e o texto mostrado no painel (por padrão Arco, Estilingue, Gancho e Gancho duplo). Para incluir outro item, basta adicionar uma linha.
 - Os textos da interface estão em inglês de propósito, para combinar com o resto do menu do Dusklight.
