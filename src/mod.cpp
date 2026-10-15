@@ -1,8 +1,8 @@
 // First-Person Aim Sensitivity (Dusklight native mod)
 //
 // Scales how fast the camera/aim moves while Link aims in first person with the Bow, Slingshot,
-// Clawshot or Double Clawshots. Bow and Slingshot each have their own sensitivity setting; the
-// Clawshot and Double Clawshots share one. Nothing else is touched.
+// Clawshot or Double Clawshots. Bow (including Bomb Arrows) and Slingshot each have their own
+// sensitivity setting; the Clawshot and Double Clawshots share one. Nothing else is touched.
 //
 // How it works (and why it plays nice with other mods):
 //   * The game funnels every first-person aim source (analog stick, mouse, gyro, touch) through
@@ -67,24 +67,27 @@ constexpr int32_t kHookPriority = -1000;
 
 constexpr u16 kNoItem = 0xFFFF;  // "no second item" marker (never equals a real equipped item)
 
-// One entry per setting. An entry covers one item, or two items that share the same setting
-// (the Clawshot and the Double Clawshots do the same thing, so they share one slider).
+constexpr int kMaxItemsPerEntry = 3;
+
+// One entry per setting. An entry covers one item, or several items that share the same setting:
+//   * the Clawshot and the Double Clawshots do the same thing, so they share one slider;
+//   * the game treats the Bomb Arrows as a separate "equipped item" from the normal Bow, so
+//     they share the Bow slider.
 struct ItemSensitivity {
-    u16 item;                // dItemNo_* value of the item
-    u16 item2;               // optional second item sharing this setting, or kNoItem
-    const char* cvarName;    // config var name (stored in config.json)
-    const char* label;       // text shown in the mod panel
-    ConfigVarHandle handle;  // filled in by mod_initialize
-    int64_t percent;         // cached copy of the config var, always clamped
+    u16 items[kMaxItemsPerEntry];  // dItemNo_* values covered by this setting (unused = kNoItem)
+    const char* cvarName;          // config var name (stored in config.json)
+    const char* label;             // text shown in the mod panel
+    ConfigVarHandle handle;        // filled in by mod_initialize
+    int64_t percent;               // cached copy of the config var, always clamped
 };
 
 ItemSensitivity g_items[] = {
-    {static_cast<u16>(dItemNo_BOW_e), kNoItem, "sensitivity_bow", "Bow sensitivity", 0,
-        kDefaultPercent},
-    {static_cast<u16>(dItemNo_PACHINKO_e), kNoItem, "sensitivity_slingshot",
+    {{static_cast<u16>(dItemNo_BOW_e), static_cast<u16>(dItemNo_BOMB_ARROW_e), kNoItem},
+        "sensitivity_bow", "Bow / Bomb Arrows sensitivity", 0, kDefaultPercent},
+    {{static_cast<u16>(dItemNo_PACHINKO_e), kNoItem, kNoItem}, "sensitivity_slingshot",
         "Slingshot sensitivity", 0, kDefaultPercent},
     // The cvar name stays "sensitivity_clawshot" so an existing saved value keeps working.
-    {static_cast<u16>(dItemNo_HOOKSHOT_e), static_cast<u16>(dItemNo_W_HOOKSHOT_e),
+    {{static_cast<u16>(dItemNo_HOOKSHOT_e), static_cast<u16>(dItemNo_W_HOOKSHOT_e), kNoItem},
         "sensitivity_clawshot", "Clawshot / Double Clawshots sensitivity", 0, kDefaultPercent},
 };
 
@@ -105,8 +108,10 @@ int64_t clamp_percent(int64_t value) {
 // Returns the settings entry for an equipped item, or nullptr if the mod does not handle it.
 ItemSensitivity* find_item(u16 item) {
     for (ItemSensitivity& entry : g_items) {
-        if (entry.item == item || entry.item2 == item) {
-            return &entry;
+        for (const u16 covered : entry.items) {
+            if (covered == item) {
+                return &entry;
+            }
         }
     }
     return nullptr;
@@ -212,9 +217,9 @@ void on_config_changed(ModContext*, ConfigVarHandle handle, const ConfigVarValue
 ModResult build_panel(ModContext*, UiElementHandle panel, void*, ModError*) {
     svc_ui->pane_add_section(mod_ctx, panel, "First-person aiming");
     svc_ui->pane_add_text(mod_ctx, panel,
-        "Speed of the aim in first person. 100% is the vanilla feel. The Clawshot and the "
-        "Double Clawshots share one setting. Other items (boomerang, ball and chain, etc.) are "
-        "not affected.",
+        "Speed of the aim in first person. 100% is the vanilla feel. The Bow also covers the "
+        "Bomb Arrows, and the Clawshot also covers the Double Clawshots. Other items "
+        "(boomerang, ball and chain, etc.) are not affected.",
         nullptr);
 
     for (const ItemSensitivity& entry : g_items) {
