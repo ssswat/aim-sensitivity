@@ -3,10 +3,10 @@
 Adiciona um controle de **sensibilidade da mira em primeira pessoa** para:
 
 - Arco
-- Bumerangue
+- Estilingue
 - Gancho (Hookshot) e Gancho duplo (Double Clawshots)
 
-Nada mais é alterado (estilingue, bola e corrente etc. continuam normais). Funciona com analógico,
+Nada mais é alterado (bumerangue, bola e corrente etc. continuam normais). Funciona com analógico,
 mouse, giroscópio e toque, porque o ajuste é feito no ponto onde o jogo junta todas essas entradas.
 
 ## Como usar no jogo
@@ -22,7 +22,7 @@ A configuração fica salva no `config.json` do Dusklight e pode ser mudada com 
 - Usa só *hooks* `pre` e `post` na função `daAlink_c::setBodyAngleToCamera` (nunca "replace"), então outros mods podem mexer na mesma função.
 - Roda por último na cadeia de hooks (prioridade baixa), então escala também o que outros mods tiverem feito na mira naquele frame.
 - Em 100% (padrão) os hooks saem na hora: comportamento idêntico ao original.
-- Só age com Arco, Bumerangue ou Gancho **e** com a câmera em primeira pessoa.
+- Só age com Arco, Estilingue ou Gancho **e** com a câmera em primeira pessoa.
 - Mantém os mesmos limites de inclinação do jogo (a mira nunca passa do que o original permite, mesmo a 300%).
 - Se o hook não puder ser instalado (versão do Dusklight diferente), o mod se desativa sozinho e mostra o erro, sem afetar o jogo.
 - Pode ser ativado, desativado e recarregado em tempo real; nada fica preso no jogo depois de desativar.
@@ -62,5 +62,5 @@ Durante testes: recompile, copie o `.dusk` e clique em **Reload** no gerenciador
 ## Ajustes no código (`src/mod.cpp`)
 
 - `kMinPercent` / `kMaxPercent`: limites do controle.
-- `is_supported_item`: quais itens contam (por padrão Arco, Bumerangue, Gancho e Gancho duplo).
+- `is_supported_item`: quais itens contam (por padrão Arco, Estilingue, Gancho e Gancho duplo).
 - Os textos da interface estão em inglês de propósito, para combinar com o resto do menu do Dusklight.

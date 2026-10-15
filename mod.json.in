@@ -3,5 +3,5 @@
   "name": "First-Person Aim Sensitivity",
   "version": "@PROJECT_VERSION@",
   "author": "Alan",
-  "description": "Adds an aim sensitivity slider for first-person aiming with the Bow, Boomerang, Hookshot and Double Clawshots. Nothing else is changed; at 100% the game behaves exactly like vanilla."
+  "description": "Adds an aim sensitivity slider for first-person aiming with the Bow, Slingshot, Hookshot and Double Clawshots. Nothing else is changed; at 100% the game behaves exactly like vanilla."
 }
