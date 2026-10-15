@@ -1,7 +1,7 @@
 // First-Person Aim Sensitivity (Dusklight native mod)
 //
 // Scales how fast the camera/aim moves while Link aims in first person with the Bow, Slingshot,
-// Hookshot or Double Clawshots. Nothing else is touched.
+// Clawshot or Double Clawshots. Each item has its own sensitivity setting. Nothing else is touched.
 //
 // How it works (and why it plays nice with other mods):
 //   * The game funnels every first-person aim source (analog stick, mouse, gyro, touch) through
@@ -64,38 +64,59 @@ constexpr int64_t kMaxPercent = 300;  // above this a tiny nudge becomes a spin
 // post-hooks (so we rescale the final result of the frame).
 constexpr int32_t kHookPriority = -1000;
 
-ConfigVarHandle g_cvarSensitivity = 0;
-int64_t g_percent = kDefaultPercent;  // cached copy of the config var, always clamped
+// One entry per supported first-person aiming item, each with its own setting.
+struct ItemSensitivity {
+    u16 item;                // dItemNo_* value of the item
+    const char* cvarName;    // config var name (stored in config.json)
+    const char* label;       // text shown in the mod panel
+    ConfigVarHandle handle;  // filled in by mod_initialize
+    int64_t percent;         // cached copy of the config var, always clamped
+};
+
+ItemSensitivity g_items[] = {
+    {static_cast<u16>(dItemNo_BOW_e), "sensitivity_bow", "Bow sensitivity", 0, kDefaultPercent},
+    {static_cast<u16>(dItemNo_PACHINKO_e), "sensitivity_slingshot", "Slingshot sensitivity", 0,
+        kDefaultPercent},
+    {static_cast<u16>(dItemNo_HOOKSHOT_e), "sensitivity_clawshot", "Clawshot sensitivity", 0,
+        kDefaultPercent},
+    {static_cast<u16>(dItemNo_W_HOOKSHOT_e), "sensitivity_double_clawshot",
+        "Double Clawshots sensitivity", 0, kDefaultPercent},
+};
 
 struct PendingAim {
     bool valid = false;
     const daAlink_c* link = nullptr;
+    const ItemSensitivity* entry = nullptr;
     s16 yaw = 0;
     s16 pitch = 0;
     float scale = 1.0f;
 };
 PendingAim g_pending;
 
-void set_percent(int64_t value) {
-    g_percent = std::clamp(value, kMinPercent, kMaxPercent);
+int64_t clamp_percent(int64_t value) {
+    return std::clamp(value, kMinPercent, kMaxPercent);
 }
 
-// Only the first-person aiming items the mod is meant for.
-bool is_supported_item(u16 item) {
-    return item == dItemNo_BOW_e || item == dItemNo_PACHINKO_e || item == dItemNo_HOOKSHOT_e ||
-           item == dItemNo_W_HOOKSHOT_e;
+// Returns the settings entry for an equipped item, or nullptr if the mod does not handle it.
+ItemSensitivity* find_item(u16 item) {
+    for (ItemSensitivity& entry : g_items) {
+        if (entry.item == item) {
+            return &entry;
+        }
+    }
+    return nullptr;
 }
 
 HookAction on_aim_pre(ModContext*, void* args, void*, void*) {
     g_pending.valid = false;
 
-    if (g_percent == kDefaultPercent) {
-        return HOOK_CONTINUE;  // vanilla behaviour, zero work
-    }
-
     daAlink_c* link = mods::arg<daAlink_c*>(args, 0);
-    if (link == nullptr || !is_supported_item(link->mEquipItem)) {
+    if (link == nullptr) {
         return HOOK_CONTINUE;
+    }
+    ItemSensitivity* entry = find_item(link->mEquipItem);
+    if (entry == nullptr || entry->percent == kDefaultPercent) {
+        return HOOK_CONTINUE;  // unsupported item or vanilla setting: zero work
     }
     // Same condition the original uses before touching the aim angles (first-person camera on).
     if (!dComIfGp_checkCameraAttentionStatus(link->field_0x317c, 0x10)) {
@@ -104,9 +125,10 @@ HookAction on_aim_pre(ModContext*, void* args, void*, void*) {
 
     g_pending.valid = true;
     g_pending.link = link;
+    g_pending.entry = entry;
     g_pending.yaw = link->shape_angle.y;
     g_pending.pitch = link->mBodyAngle.x;
-    g_pending.scale = static_cast<float>(g_percent) / 100.0f;
+    g_pending.scale = static_cast<float>(entry->percent) / 100.0f;
     return HOOK_CONTINUE;
 }
 
@@ -127,7 +149,7 @@ void on_aim_post(ModContext*, void* args, void*, void*) {
         return;
     }
     // The item can change inside the original call (e.g. aiming was cancelled); then do nothing.
-    if (!is_supported_item(link->mEquipItem)) {
+    if (find_item(link->mEquipItem) != pending.entry) {
         return;
     }
 
@@ -170,33 +192,44 @@ void on_aim_post(ModContext*, void* args, void*, void*) {
     }
 }
 
-void on_config_changed(ModContext*, ConfigVarHandle, const ConfigVarValue* value,
+void on_config_changed(ModContext*, ConfigVarHandle handle, const ConfigVarValue* value,
     const ConfigVarValue*, void*) {
-    if (value != nullptr) {
-        set_percent(value->int_value);
+    if (value == nullptr) {
+        return;
+    }
+    for (ItemSensitivity& entry : g_items) {
+        if (entry.handle == handle) {
+            entry.percent = clamp_percent(value->int_value);
+        }
     }
 }
 
 ModResult build_panel(ModContext*, UiElementHandle panel, void*, ModError*) {
     svc_ui->pane_add_section(mod_ctx, panel, "First-person aiming");
     svc_ui->pane_add_text(mod_ctx, panel,
-        "Speed of the aim in first person with the Bow, Slingshot, Hookshot and Double "
-        "Clawshots. 100% is the vanilla feel.",
+        "Speed of the aim in first person, set separately for each item. 100% is the vanilla "
+        "feel. Other items (boomerang, ball and chain, etc.) are not affected.",
         nullptr);
 
-    UiControlDesc control = UI_CONTROL_DESC_INIT;
-    control.kind = UI_CONTROL_NUMBER;
-    control.label = "Aim sensitivity";
-    control.help_rml =
-        "Lower = slower and more precise, higher = faster. Applies to stick, mouse, gyro and "
-        "touch aiming. Other items (boomerang, ball and chain, etc.) are not affected.";
-    control.binding = UI_BINDING_CONFIG_VAR;
-    control.config_var = g_cvarSensitivity;
-    control.min = kMinPercent;
-    control.max = kMaxPercent;
-    control.step = 5;
-    control.suffix = "%";
-    return svc_ui->pane_add_control(mod_ctx, panel, &control, nullptr);
+    for (const ItemSensitivity& entry : g_items) {
+        UiControlDesc control = UI_CONTROL_DESC_INIT;
+        control.kind = UI_CONTROL_NUMBER;
+        control.label = entry.label;
+        control.help_rml =
+            "Lower = slower and more precise, higher = faster. Applies to stick, mouse, gyro "
+            "and touch aiming.";
+        control.binding = UI_BINDING_CONFIG_VAR;
+        control.config_var = entry.handle;
+        control.min = kMinPercent;
+        control.max = kMaxPercent;
+        control.step = 5;
+        control.suffix = "%";
+        const ModResult result = svc_ui->pane_add_control(mod_ctx, panel, &control, nullptr);
+        if (result != MOD_OK) {
+            return result;
+        }
+    }
+    return MOD_OK;
 }
 
 }  // namespace
@@ -205,24 +238,29 @@ extern "C" {
 
 MOD_EXPORT ModResult mod_initialize(ModError* error) {
     g_pending = {};
-    set_percent(kDefaultPercent);
 
-    ConfigVarDesc desc = CONFIG_VAR_DESC_INIT;
-    desc.name = "sensitivity";
-    desc.type = CONFIG_VAR_INT;
-    desc.default_int = kDefaultPercent;
-    ModResult result = svc_config->register_var(mod_ctx, &desc, &g_cvarSensitivity);
-    if (result != MOD_OK) {
-        return mods::set_error(error, result, "failed to register the sensitivity setting");
+    for (ItemSensitivity& entry : g_items) {
+        entry.handle = 0;
+        entry.percent = kDefaultPercent;
+
+        ConfigVarDesc desc = CONFIG_VAR_DESC_INIT;
+        desc.name = entry.cvarName;
+        desc.type = CONFIG_VAR_INT;
+        desc.default_int = kDefaultPercent;
+        const ModResult registered = svc_config->register_var(mod_ctx, &desc, &entry.handle);
+        if (registered != MOD_OK) {
+            return mods::set_error(error, registered, "failed to register a sensitivity setting");
+        }
+
+        // Values loaded from config.json do not fire callbacks: read the starting value explicitly.
+        int64_t stored = kDefaultPercent;
+        if (svc_config->get_int(mod_ctx, entry.handle, &stored) == MOD_OK) {
+            entry.percent = clamp_percent(stored);
+        }
+        svc_config->subscribe(mod_ctx, entry.handle, on_config_changed, nullptr, nullptr);
     }
 
-    // Values loaded from config.json do not fire callbacks: read the starting value explicitly.
-    int64_t stored = kDefaultPercent;
-    if (svc_config->get_int(mod_ctx, g_cvarSensitivity, &stored) == MOD_OK) {
-        set_percent(stored);
-    }
-    svc_config->subscribe(mod_ctx, g_cvarSensitivity, on_config_changed, nullptr, nullptr);
-
+    ModResult result = MOD_OK;
     HookOptions options{};
     options.struct_size = sizeof(HookOptions);
     options.priority = kHookPriority;
@@ -253,8 +291,10 @@ MOD_EXPORT ModResult mod_update(ModError*) {
 MOD_EXPORT ModResult mod_shutdown(ModError*) {
     // Hooks, config subscriptions and the panel are removed by the loader.
     g_pending = {};
-    g_cvarSensitivity = 0;
-    set_percent(kDefaultPercent);
+    for (ItemSensitivity& entry : g_items) {
+        entry.handle = 0;
+        entry.percent = kDefaultPercent;
+    }
     return MOD_OK;
 }
 
